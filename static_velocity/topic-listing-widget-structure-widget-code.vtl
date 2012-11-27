@@ -1,0 +1,145 @@
+#set($currentPage = $request.getParameter("currentPage"))
+#if($UtilMethods.isSet($currentPage))
+ #set($currentPage = $currentPage)
+#else
+ #set($currentPage = 1)
+#end
+
+#if(!$UtilMethods.isSet($maxTopicsPerPage))
+ #set($offset = 20)
+#else
+ #set($offset = $math.toInteger($maxTopicsPerPage))
+#end
+
+
+#if(!$UtilMethods.isSet($orderByDate))
+ #set($orderByDate = "desc")
+#end
+
+#set($catSubQuery = "")
+
+#if($UtilMethods.isSet($forumCategories) && $forumCategories.size() > 0)
+ #set($catSubQuery = "+(")
+ #foreach($catInode in $forumCategories)
+  #set($cat = $categories.getCategoryByInode(${catInode}))
+  #set($catSubQuery = "${catSubQuery} categories:${cat.categoryVelocityVarName}")
+ #end
+ #set($catSubQuery = "${catSubQuery} )")
+#end
+
+
+
+#set($query = "+structureName:topic +languageId:1 +deleted:false +live:true ${catSubQuery}")
+#set($sortBy = "topic.lastModified ${orderByDate}")
+
+##set the number of Contentlets to display per page
+
+#set($page = $math.toInteger($currentPage))
+
+#if($EDIT_MODE)
+ Query: ${query}
+ <br>
+ Sort By: ${sortBy}
+ <br>
+ Max Topics per page: ${offset}
+ <br>
+ Current page : ${page}
+ <br>
+#end
+
+#set($pagedList = $dotcontent.pullPerPage("${query}",$page,$offset,"${sortBy}"))
+
+<link rel="stylesheet" href="css/forum.css" type="text/css" />
+
+<div class="forum-wrapper">
+
+	<h2>
+#if($UtilMethods.isSet(${listingHeader}))
+${listingHeader}
+#else
+Forum - Index
+#end
+</h2>
+
+<br>
+
+#if($UtilMethods.isSet(${forumDescription}))
+<p>${forumDescription}</p>
+#end
+
+<br>
+
+	#macro(paginate)
+	  <div class="pagination"> 
+	   #if($page > 1)
+	    #set($previousPage = $math.sub($page,1))
+	
+	    <a href="?currentPage=$previousPage">< previous</a>
+	       | 
+	   #else 
+	                    
+	   #end
+	      Page $page of $pagedList.totalPages  
+	
+	   #if($page < $pagedList.totalPages)
+	    #set($nextPage = $math.add($page,1))
+	     |   
+	    <a href="?currentPage=$nextPage">next ></a>
+	   #else 
+	              
+	   #end
+	  </div><!-- end .pagination -->
+	#end
+	
+	##To show pagination controls at the top of the content
+	#paginate()  
+	
+	<table class="forum-topics" width="100%">
+	  <tr>
+  	  <th>Forum Name/Description</th>
+	    <th>Threads</th>
+	    <th>Last Post</th>
+	  </tr>
+	
+	#foreach($con in $pagedList)
+	  <tr>
+	  <!--
+  	  <td valign="middle" align="center" width="24"><img src="/forum/images/tips.png" alt="Topics" /></td>
+  	  -->
+	    <td>
+	      <h3><a href="/forum/topic/$!{con.urlTitle}">$!con.title</a></h3>#editContentlet($con.inode)
+	      #set($contentOwner = $cmsuser.getUserByUserId($con.owner))
+	     	#if($UtilMethods.isSet($contentOwner)) 
+			#set($topicAuthor = "${contentOwner.firstName} ${contentOwner.lastName}")
+		#end
+	      <small>By <strong>$topicAuthor</strong>, on <strong>$UtilMethods.dateToShortJDBC($con.lastModified)</strong></small>
+	      <br>
+	      $UtilMethods.prettyShortenString("$con.description", 250)
+	      ##$UtilMethods.shortenString("$con.description", 250)
+	    </td>
+	    #set($relatedList = $dotcontent.pullRelated("Parent_Topic-Child_Thread","${con.identifier}",false,0,"modDate desc"))
+	    <td>$relatedList.size()</td>
+	    <td width="200">
+	      #set($relatedList = $dotcontent.pullRelated("Parent_Topic-Child_Thread","${con.identifier}",false,1,"modDate desc"))
+	      #if($relatedList.size() > 0)
+	        #foreach($content in $relatedList)
+	          <h3><a href="/forum/topic/$!{con.urlTitle}">$!content.title</a></h3>
+	          <small>By  <strong>$content.owner</strong>, on <strong>$UtilMethods.dateToShortJDBC($content.lastModified)</strong></small>
+	          ##&nbsp;-&nbspLast Update: $UtilMethods.dateToShortJDBC($content.lastModified)
+	        #end
+	      #else
+	      	#if($EDIT_MODE)
+	      		No threads added to this topic.
+	      	#end
+	      #end
+	    </td>
+	  </tr>
+			
+			##<button data-dojo-type="dijit.form.Button" type="button" onClick="javascript:window.location='/forum/topic/$!{con.urlTitle}'">View Threads</button>
+			##<span class="meta">Created: $UtilMethods.dateToShortJDBC($con.lastModified)</span>
+			
+	#end
+	</table>
+	##To show pagination controls at the bottom of the content
+	#paginate()
+</div>

@@ -1,0 +1,3 @@
+<create creator="new" javascript="ForumAjax" scope="application">
+  <param name="class" value="org.dotcms.forum.ajax.ForumAjax"/>
+</create>

@@ -1,0 +1,143 @@
+<link rel="stylesheet" href="/forum/css/forum.css" type="text/css" />
+<script type="text/javascript" src="/dwr/engine.js"></script>
+<script src="/dwr/interface/ForumAjax.js"></script>
+<script src="/forum/js/jquery-latest.js"></script>
+<script src="/forum/js/forum.js"></script>
+<script type="text/javascript">
+
+function showForm(){
+	$('#addThread').show('normal', function() {
+		window.location.href="#addThread";
+		setSubmitContentForm();
+	});
+	
+	$('.group > dt').filter(function (index) { 
+	    return $(this).children().length < 1; 
+	}).parent(".group").hide();
+        setLastModifiedFieldValue();
+}
+
+function cancelForm(){
+	$('#addThread').hide('normal', function() {
+		window.location.href="#addThread";
+		setSubmitContentForm();
+	});
+	
+	$('.group > dt').filter(function (index) { 
+	    return $(this).children().length < 1; 
+	}).parent(".group").hide();
+	document.getElementById('submitContentForm').reset();
+	/*document.getElementById('description').value='';*/
+        setLastModifiedFieldValue();
+}
+
+</script>
+
+#if(!$URLMapContent)
+  #if($UtilMethods.isSet($request.getParameter('id')))  
+    #getContentMapDetail($request.getParameter('id'))  
+    #set($URLMapContent = $content)
+  #end
+#end
+
+<form id="hiddenData">
+<input type="hidden" id="userId" value="$!{user.userId}">
+<input type="hidden" id="contentIdentifier" value="$URLMapContent.identifier">
+</form>
+
+#if($URLMapContent)
+<div class="forum-thread-wrapper">
+	#if(!$UtilMethods.isSet($orderByDate))
+	 #set($orderByDate = "desc")
+	#end
+	<h2>$URLMapContent.title</h2>
+	<button dojoType="dijit.form.Button" id="subscribeButton" type="button" onClick="editSubscription();">Subscribe</button>
+	<button dojoType="dijit.form.Button" type="button" onclick="showForm();">Add Thread</button>
+	$URLMapContent.description
+
+	#set($relatedList = $dotcontent.pullRelated("Parent_Topic-Child_Thread","${URLMapContent.identifier}",true,0,"modDate desc"))
+	#if($relatedList.size() == 0)
+   		#if($EDIT_MODE)
+			No threads added to this topic.
+		#end
+	#else
+	
+		<table class="forum-topics" width="100%">
+		  <tr>
+			  <th>Forum Name/Description</th>
+		    <th>Replies</th>
+		    <th>Last Post</th>
+		  </tr>
+		
+		#foreach($content in $relatedList)
+		  #set($relatedThreads = $dotcontent.pullRelated("Parent_Thread-Child_Reply","${content.identifier}",false,0,"modDate desc"))
+		  <tr>
+		  <!--
+		    <td valign="middle" align="center" width="24"><img src="/forum/images/tips.png" alt="Topics" /></td>
+		  -->
+        <td><a href="/forum/thread/${content.urlTitle}">$content.title</a>
+        #set($contentOwner = $cmsuser.getUserByUserId($content.owner))
+	#if($UtilMethods.isSet($contentOwner)) 
+		#set($threadAuthor = "${contentOwner.firstName} ${contentOwner.lastName}")
+	#end
+	<small>By  <strong>$threadAuthor</strong>, on <strong>$UtilMethods.dateToShortJDBC($content.lastModified)</strong></small>
+        </td>
+        <td>$relatedThreads.size()</td>
+        <td>
+          #if($relatedThreads.size() == 0)
+          	#if($EDIT_MODE)
+          		<p>No replies added to this thread.</p>
+          	#end
+          #else
+          	#foreach($reply in $relatedThreads)
+          		#if($velocityCount == 1)
+          			#set($lastPostTitle = $reply.title)
+          			#set($contentOwner = $cmsuser.getUserByUserId($reply.owner))
+          			#if($UtilMethods.isSet($contentOwner)) 
+          				#set($replyAuthor = "${contentOwner.firstName} ${contentOwner.lastName}")
+          			#end
+          			#set($lastPostCreationDate = "$UtilMethods.dateToShortJDBC($reply.modDate)")
+          			<h3><a href="/forum/thread/${content.urlTitle}">${lastPostTitle}</a></h3>
+          			<small>By <strong>${replyAuthor}</strong>, on <strong>${lastPostCreationDate}</strong></small>
+          		#end
+          	#end
+          #end
+        </td>
+		#end
+		</table>
+	#end
+
+	<div id="addThread" style="display:none">
+		<h3>Add Thread to this topic</h3>
+		#if(!$UtilMethods.isSet($redirectPage))
+			#set($redirectPage="/forum/topic/${URLMapContent.urlTitle}")
+		#end
+		#set($contentAutoPublish=true)
+		#set($contentUseCaptcha=false)
+		#set($dontShowFields='threadStatus,urlTitle,lastModified')
+		#set($contentFormReferer="$redirectPage")
+		#set($Parent_Topic-Child_Thread = "${URLMapContent.identifier}")
+		#submitContent('Thread')
+		<button dojoType="dijit.form.Button" type="button" class="cancel" onclick="cancelForm();">Cancel</button>
+	</div>
+
+	<script type="text/javascript">
+		var userId = document.getElementById("userId").value;
+		var contentIdentifier = document.getElementById("contentIdentifier").value;
+		if(userId != 'null' && userId != '' && contentIdentifier != 'null' && contentIdentifier != '') {
+			ForumAjax.isUserSubscribed(userId, contentIdentifier, {
+				callback:function(result) { 
+				if(result==true) {
+					document.getElementById("subscribeButton").innerHTML = "Unsubscribe";
+				} else if(result==false) { 
+					document.getElementById("subscribeButton").innerHTML = "Subscribe";
+				} 
+				
+			}	
+			});
+		}
+	</script>
+</div>		
+#else
+	<p>Please pass a valid identifier or URL Map on url.
+#end

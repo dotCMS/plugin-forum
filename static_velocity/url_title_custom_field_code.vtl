@@ -1,0 +1,37 @@
+<script>
+function updateDisplayURLTitle(){
+    
+    // get the title entered by the user
+    var plainTitle = dojo.byId('title');  
+    
+    // make a friendly url
+    var urlTitle = plainTitle.value.toLowerCase();
+    urlTitle= urlTitle.replace(/^\s+|\s+$/g,"");
+    urlTitle = urlTitle.replace(/[^a-zA-Z 0-9]+/g,' ');  
+    urlTitle = urlTitle.replace(/\s/g, "-");
+    while(urlTitle.indexOf("--") > -1){
+      urlTitle = urlTitle.replace("--",'-');  
+    }
+    if (urlTitle.charAt(urlTitle.length-1)=='-') 
+    {
+      urlTitle = urlTitle.substring(0, urlTitle.length-1);
+    }
+    if (urlTitle.charAt(0)=='-') 
+    {
+      urlTitle = urlTitle.substring(1, urlTitle.length);
+    }
+  
+    // set the values of the display place holder and the custom field
+    // the   is to hold the div open
+    dojo.byId('displayURLTitle').innerHTML = urlTitle;
+    dojo.byId('urlTitle').value=urlTitle;
+  }
+
+  // attach this the text1 field onchange
+  dojo.connect(dijit.byId('title'), 'onchange', 'updateDisplayURLTitle');
+  
+  // populate the field on load
+  dojo.addOnLoad(updateDisplayURLTitle);
+
+</script>
+<div id="displayURLTitle" style="height:20px"></div>

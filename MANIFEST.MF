@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Plugin-Name: Forum Feature for dotCMS
+Plugin-Version: 1
+Author: dotCMS

@@ -1,0 +1,123 @@
+<link rel="stylesheet" href="/forum/css/forum.css" type="text/css">
+<script type="text/javascript" src="/dwr/engine.js"></script>
+<script src="/dwr/interface/ForumAjax.js"></script>
+<script src="/forum/js/jquery-latest.js"></script>
+<script src="/forum/js/forum.js"></script>
+<script type="text/javascript">
+
+function showForm(){
+		$('#addReply').show('normal', function() {
+		window.location.href="#addReply";
+		setSubmitContentForm();
+		});
+                setLastModifiedFieldValue();
+}
+
+function cancelForm(){
+	$('#addReply').hide('normal', function() {
+		window.location.href="#addThread";
+		setSubmitContentForm();
+	});
+	
+	$('.group > dt').filter(function (index) { 
+	    return $(this).children().length < 1; 
+	}).parent(".group").hide();
+	document.getElementById('submitContentForm').reset();
+        setLastModifiedFieldValue();
+}
+
+
+</script>
+
+#if(!$URLMapContent)
+  #if($UtilMethods.isSet($request.getParameter('id')))  
+    #getContentMapDetail($request.getParameter('id'))  
+    #set($URLMapContent = $content)
+  #end
+#end
+
+<form id="hiddenData">
+<input type="hidden" id="userId" value="$!{user.userId}">
+<input type="hidden" id="contentIdentifier" value="$URLMapContent.identifier">
+</form>
+
+#if($URLMapContent)
+<div class="forum-thread-wrapper">
+	#if(!$UtilMethods.isSet($orderByDate))
+		#set($orderByDate = "desc")
+	#end
+	#set($contentOwner = $cmsuser.getUserByUserId($URLMapContent.contentOwnerId))
+
+	#if($UtilMethods.isSet($contentOwner)) 
+		#set($threadAuthor = "${contentOwner.firstName} ${contentOwner.lastName}")
+	#end
+	#set($lastPostCreationDate = "$UtilMethods.dateToShortJDBC($URLMapContent.modDate)")
+	<h2>$URLMapContent.title</h2>
+	<small>By <strong>${threadAuthor}</strong>, on <strong>${lastPostCreationDate}</strong></small>
+	
+	<button dojoType="dijit.form.Button" id="subscribeButton" type="button" onClick="editSubscription();">Subscribe</button>
+	<button dojoType="dijit.form.Button" type="button" onclick="showForm();">Add Reply</button>
+
+	<h3>$URLMapContent.description</h3>
+
+	#set($relatedReplies = $dotcontent.pullRelated("Parent_Thread-Child_Reply","${URLMapContent.identifier}",false,0,"modDate desc"))
+	#if($relatedList.size() == 0)
+   		#if($EDIT_MODE)
+			No replies added to this thread.
+		#end
+	#else
+		<ul>
+		#foreach($reply in $relatedReplies)
+			<li>
+			#set($lastPostTitle = $reply.title)
+			#set($contentOwner = $cmsuser.getUserByUserId($reply.owner))
+			#if($UtilMethods.isSet($contentOwner)) 
+				#set($replyAuthor = "${contentOwner.firstName} ${contentOwner.lastName}")
+			#end
+			#set($lastPostCreationDate = "$UtilMethods.dateToShortJDBC($reply.modDate)")
+			<h4>${lastPostTitle}</h4><small><i> By <strong>${replyAuthor}</strong>, on <strong>${lastPostCreationDate}</strong></i></small>
+			<p>$reply.description</p>
+			</li>
+		#end
+		</ul>
+	#end
+	<hr>
+	<div id="addReply" style="display:none">
+	#if($URLMapContent.threadStatus == 'yes')
+		<h3>Add Reply to this thread</h3>
+		#if(!$UtilMethods.isSet($redirectPage))
+			#set($redirectPage="/forum/thread/${URLMapContent.urlTitle}")
+		#end
+
+		#set($contentAutoPublish=true)
+		#set($contentUseCaptcha=false)
+		#set($showOnlyRequiredFields=true)
+		#set($contentFormReferer="$redirectPage")
+		#set($Parent_Thread-Child_Reply = "$URLMapContent.identifier")
+		#submitContent('Reply')
+		<button dojoType="dijit.form.Button" type="button" onclick="cancelForm();" class="cancel">Cancel</button>
+	#else
+		<h3>This thread was closed by the Forum Admin. You can not add replies</h3>
+	#end
+	</div>
+	
+	<script type="text/javascript">
+		var userId = document.getElementById("userId").value;
+		var contentIdentifier = document.getElementById("contentIdentifier").value;
+		if(userId != 'null' && userId != '' && contentIdentifier != 'null' && contentIdentifier != '') {
+			ForumAjax.isUserSubscribed(userId, contentIdentifier, {
+				callback:function(result) { 
+				if(result==true) {
+					document.getElementById("subscribeButton").innerHTML = "Unsubscribe";
+				} else if(result==false) { 
+					document.getElementById("subscribeButton").innerHTML = "Subscribe";
+				} 
+				
+			}	
+			});
+		}
+	</script>
+</div>		
+#else
+	<p>Please pass a valid identifier or URL Map on url.
+#end

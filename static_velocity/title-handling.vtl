@@ -1,0 +1,50 @@
+## TITLE, META
+## -------------------
+
+## ================ Canonical Variables  ========================
+#* Sets up the canonical link which is used to specify the preferred 
+   version of a set of pages with highly similar content
+*#
+#set($canonical_query_string = $request.getQueryString())
+#set($canonical_uri = $request.getRequestURI())
+#set($canonical_host = $host.hostname)
+
+#if($UtilMethods.isSet($canonical_query_string) && "$canonical_query_string" != "")
+  ## Add dollar sign for arguments
+  #set($canonical_query_string = "?${canonical_query_string}")
+#elseif($canonical_uri.contains('index.dot'))
+  ## Remove 'index.dot' from url only if there is no query string and it IS an index page
+  #set($canonical_uri = $canonical_uri.substring(0,$canonical_uri.indexOf("index.dot")))
+#end
+
+## Set the default canonical link
+#set($canonical_default_link = "http://$!{canonical_host}$!{canonical_uri}$!{canonical_query_string}")
+
+## ================ Title handling for subscription content ========================
+#if($VTLSERVLET_URI.contains('/forum/topic/') && $UtilMethods.isSet($URLMapContent))
+    #set($pageTitle = "$!{URLMapContent.title}")
+  #set($friendlyName = "$!{URLMapContent.title}")
+    #set($crumbTitle = $pageTitle)
+  #set($canonical_default_link = "http://$!{canonical_host}/forum/topic/$!{URLMapContent.urlTitle}")
+#end
+
+## ================ Title handling for News content ========================
+#if($VTLSERVLET_URI.contains('/forum/thread/') && $UtilMethods.isSet($URLMapContent))
+  #set($pageTitle = "$!{URLMapContent.title}")
+  #set($friendlyName = "$!{URLMapContent.title}")
+  #set($crumbTitle = $pageTitle)
+  #set($canonical_default_link = "http://$!{canonical_host}/forum/thread/$!{URLMapContent.urlTitle}")
+#end
+
+
+## ================ Final Setup ========================
+## reset the facility name with a hyphen if we have it
+#set($facility_name = '')
+#if($UtilMethods.isSet($host_variable.facilityName) && $host_variable.facilityName != '')
+  #set($facility_name = " - $!{host_variable.facilityName}")
+#end
+
+## Handle the $friendlyName variable
+<title>$!{friendlyName}$!{facility_name}</title>
+<link rel="canonical" href="$canonical_default_link"/>
+## -------------- end page title code ------------
