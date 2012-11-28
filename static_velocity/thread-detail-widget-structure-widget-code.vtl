@@ -46,7 +46,7 @@ function cancelForm(){
 	#if(!$UtilMethods.isSet($orderByDate))
 		#set($orderByDate = "desc")
 	#end
-	#set($contentOwner = $cmsuser.getUserByUserId($URLMapContent.contentOwnerId))
+	#set($contentOwner = $cmsuser.getUserByUserId($URLMapContent.owner))
 
 	#if($UtilMethods.isSet($contentOwner)) 
 		#set($threadAuthor = "${contentOwner.firstName} ${contentOwner.lastName}")
@@ -83,7 +83,8 @@ function cancelForm(){
 	#end
 	<hr>
 	<div id="addReply" style="display:none">
-	#if($URLMapContent.threadStatus == 'yes')
+	
+	#if($URLMapContent.threadStatus.getSelectValue() == "yes")
 		<h3>Add Reply to this thread</h3>
 		#if(!$UtilMethods.isSet($redirectPage))
 			#set($redirectPage="/forum/thread/${URLMapContent.urlTitle}")

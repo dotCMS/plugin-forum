@@ -20,7 +20,6 @@ import org.apache.struts.action.ActionMessages;
 import org.apache.struts.actions.DispatchAction;
 import org.dotcms.forum.util.CleanSubscriptionsThread;
 import org.dotcms.forum.util.EmailSubscribersThread;
-import org.dotcms.forum.util.ForumUtils;
 
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
@@ -28,7 +27,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.content.submit.util.CaptchaUtil;
 import com.dotmarketing.cms.content.submit.util.SubmitContentUtil;

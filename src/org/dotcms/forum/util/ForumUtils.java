@@ -9,6 +9,7 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -73,8 +74,7 @@ public class ForumUtils {
 		return cons;
 	}
 	
-	public static void createSubscription (Contentlet content, User subscribingUser){
-		
+	public static void createSubscription (Contentlet content, User subscribingUser) throws DotHibernateException{
 		
 		Structure contentStructure = content.getStructure();
 		Structure subscriptionStructure = getStructureToSubscribeOrUnsubscribe(contentStructure);
@@ -94,17 +94,22 @@ public class ForumUtils {
 		try{
 			if(UtilMethods.isSet(userIdField.getInode()) && UtilMethods.isSet(contentIdentifierField.getInode()) ){
 				newCont.setStructureInode(subscriptionStructure.getInode());
-				newCont.setArchived(false);
-				newCont.setWorking(true);
-				newCont.setLive(true);
+
+				newCont.setModUser(subscribingUser.getUserId());
+				newCont.setOwner(subscribingUser.getUserId());
 				newCont.setLanguageId(langAPI.getDefaultLanguage().getId());
 				newCont.setHost(hostAPI.findDefaultHost(userAPI.getSystemUser(), true).getIdentifier());
 				conAPI.setContentletProperty(newCont, userIdField, subscribingUser.getUserId());
 				conAPI.setContentletProperty(newCont, contentIdentifierField, content.getIdentifier());
 			}
 			
-			conAPI.checkin(newCont, new ArrayList<Category>(), new ArrayList<Permission>(), 
+			newCont = conAPI.checkin(newCont, new ArrayList<Category>(), new ArrayList<Permission>(), 
 					userAPI.getSystemUser(), true);
+			
+			APILocator.getVersionableAPI().setLive(newCont);
+			APILocator.getVersionableAPI().setDeleted(newCont,false);
+			APILocator.getVersionableAPI().setWorking(newCont);
+			
 		}
 		catch(Exception e){
 			Logger.error(ForumUtils.class, "There was an error. User can't subscribe to this content. Please try again." + e.getMessage());
